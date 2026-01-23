@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2016",
+    "target": "ES2020",  // ← ИЗМЕНИ НА ES2020 или ES2019
+    "lib": ["ES2020", "DOM"],  // ← ДОБАВЬ ЭТУ СТРОКУ
     "module": "commonjs",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "rootDir": "./src"  // ← РЕКОМЕНДУЮ ДОБАВИТЬ
   },
-  "include": ["src"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
