@@ -8,7 +8,8 @@
     "strict": true,
     "skipLibCheck": true,
     "outDir": "dist",
-    "rootDir": "./src"  // ← РЕКОМЕНДУЮ ДОБАВИТЬ
+    "rootDir": "./src",  // ← РЕКОМЕНДУЮ ДОБАВИТЬ
+    "experimentalDecorators": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
