@@ -45,11 +45,18 @@ class RequestBuilder {
         if (!this.url) {
             throw new Error('Url is required');
         }
+
         try {
+            // Преобразуем массив заголовков в объект
+            const headersObj: Record<string, string> = {};
+            this.headers.forEach(([key, value]) => {
+                headersObj[key] = value;
+            });
+
             const response = await fetch(this.url, {
                 method: this.method,
-                headers: {...this.headers},
-                body: this.body
+                headers: headersObj,
+                body: this.method === IRequestType.get ? undefined : this.body // Не передаем body для GET
             });
 
             if (!response.ok) {
@@ -57,18 +64,74 @@ class RequestBuilder {
             }
 
             const result = await response.json();
-
-            console.log('result is: ', JSON.stringify(result, null, 4));
-
+            console.log('result is: ', JSON.stringify(result, null, 2));
             return result;
         } catch (error) {
             if (error instanceof Error) {
                 console.log('error message: ', error.message);
-                return error.message;
+                throw error;
             } else {
                 console.log('unexpected error: ', error);
-                return 'An unexpected error occurred';
+                throw new Error('An unexpected error occurred');
             }
         }
     }
 }
+
+class ProductAPI {
+    public baseUrl: string = 'https://dummyjson.com/products';
+
+    getProduct(id: number): Promise<any> {
+        // Базовая реализация (будет перехвачена Proxy)
+        return new RequestBuilder()
+            .setMethod(IRequestType.get)
+            .setUrl(`${this.baseUrl}/${id}`)
+            .exec();
+    }
+}
+
+// Создаем Proxy
+const apiWithProxy = new Proxy(new ProductAPI(), {
+    get(target, prop, receiver) {
+        if (prop === 'getProduct') {
+            return function(id: number) {
+                if (id < 10) {
+                    return Reflect.get(target, prop, receiver).call(target, id);
+                } else {
+                    return Promise.reject(new Error(`ID ${id} must be less than 10`));
+                }
+            };
+        }
+        return Reflect.get(target, prop, receiver);
+    }
+});
+
+// Тестируем
+async function test() {
+    try {
+        // ID < 10 - работает
+        console.log('Запрос ID 1:');
+        const product1 = await apiWithProxy.getProduct(1);
+        console.log('Успех:', product1.title);
+
+        console.log('\nЗапрос ID 5:');
+        const product5 = await apiWithProxy.getProduct(5);
+        console.log('Успех:', product5.title);
+
+        // ID >= 10 - ошибка
+        console.log('\nЗапрос ID 10:');
+        await apiWithProxy.getProduct(10);
+    } catch (error) {
+        console.log('Ошибка:', (error as Error).message);
+    }
+
+    try {
+        console.log('\nЗапрос ID 15:');
+        await apiWithProxy.getProduct(15);
+    } catch (error) {
+        console.log('Ошибка:', (error as Error).message);
+    }
+}
+
+// Запускаем тест
+test();
